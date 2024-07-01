@@ -16,6 +16,8 @@ pip install git+https://github.com/CrinitusFeles/Event.git
 ## Using
 
 ``` python
+from event import Event
+
 def handler(arg: int)
     print(arg)
 
