@@ -34,3 +34,15 @@ class Event:
                 _thread: Thread = Thread(name='emit', target=callback,
                                          args=args, daemon=True)
                 _thread.start()
+
+    async def aemit(self, *args) -> None:
+        if len(args) == len(self.args):
+            if any(not isinstance(arg, self_arg)
+                    for arg, self_arg in zip(args, self.args)):
+                raise TypeError(f'This event should emit next types: '\
+                                f'{self.args}, but you try to emit {args}.')
+        else:
+            raise TypeError(f'This event should emit next types: '\
+                            f'{self.args}, but you try to emit {args}.')
+        for callback in self.subscribers:
+            await callback(*args)
