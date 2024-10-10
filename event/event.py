@@ -1,16 +1,15 @@
 
 
-from threading import RLock, Thread
-from typing import Callable, Type
+from asyncio import iscoroutinefunction
+import asyncio
+from types import UnionType
+from typing import Any, Callable, Coroutine, Type
 
 
 class Event:
-
-    lock: RLock = RLock()
-    def __init__(self, *args: Type) -> None:
-        self.subscribers: list[Callable] = []
-        self.args: tuple[Type, ...] = args
-
+    def __init__(self, *args: Type | UnionType) -> None:
+        self.subscribers: list[Callable[..., Coroutine | Any]] = []
+        self.args: tuple[Type | UnionType, ...] = args
 
     def subscribe(self, func: Callable) -> None:
         if func not in self.subscribers:
@@ -21,21 +20,6 @@ class Event:
             self.subscribers.remove(func)
 
     def emit(self, *args) -> None:
-        with self.lock:
-            if len(args) == len(self.args):
-                if any(not isinstance(arg, self_arg)
-                       for arg, self_arg in zip(args, self.args)):
-                    raise TypeError(f'This event should emit next types: '\
-                                    f'{self.args}, but you try to emit {args}.')
-            else:
-                raise TypeError(f'This event should emit next types: '\
-                                f'{self.args}, but you try to emit {args}.')
-            for callback in self.subscribers:
-                _thread: Thread = Thread(name='emit', target=callback,
-                                         args=args, daemon=True)
-                _thread.start()
-
-    async def aemit(self, *args) -> None:
         if len(args) == len(self.args):
             if any(not isinstance(arg, self_arg)
                     for arg, self_arg in zip(args, self.args)):
@@ -45,4 +29,7 @@ class Event:
             raise TypeError(f'This event should emit next types: '\
                             f'{self.args}, but you try to emit {args}.')
         for callback in self.subscribers:
-            await callback(*args)
+            if iscoroutinefunction(callback):
+                asyncio.create_task(callback(*args))
+            else:
+                callback(*args)
