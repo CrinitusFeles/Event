@@ -7,9 +7,9 @@ from typing import Any, Callable, Coroutine, Type
 
 
 class Event:
-    def __init__(self, *args: Type | UnionType) -> None:
+    def __init__(self, *args: UnionType | Type) -> None:
         self.subscribers: list[Callable[..., Coroutine | Any]] = []
-        self.args: tuple[Type | UnionType, ...] = args
+        self.args: tuple[UnionType | Type, ...] = args
 
     def subscribe(self, func: Callable) -> None:
         if func not in self.subscribers:
